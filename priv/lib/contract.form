@@ -1,0 +1,29 @@
+{ form, contract, sections, 
+	[
+		{sections, [attributes, type_section, state_sections, anystate_section]},
+		
+		{attributes, [attibute, attributes]},
+		{attribute, [{"+", attribute_name, "(", string, ")", "."}]},
+		{attribute_name, ["NAME", "VSN"]},
+		
+		{type_section, [{"+", "TYPES", type_exprs, <<3>>, "."}]},
+		{type_exprs, [type_expr, type_exprs]},
+		{type_expr, [{type, "=", type_spec}]},
+		{type_spec, [atom, type, {"{", atom, type, "}"}, {"{", atom, "[", typelist, "]", "}"}]},
+		{typelist, [type, typelist]},
+		{type, [{atom, "(", ")"}]},
+		
+		{state_sections, [state_section, state_sections]},
+		{state_section, [{"+", "STATE", state_name, state_exprs, "."}]},
+		{state_exprs, [state_expr, state_exprs]},
+		{state_expr, [{type, "=>", type, "&", atom}, {type, "=>", type}]}, 
+		
+		{anystate_section, [{"+", "ANYSTATE", anystate_exprs, "."}]},
+		{anystate_exprs, [anystate_expr, anystate_exprs]},
+		{anystate_expr, [{type, "=>", type}]}, 
+		{string, [{regex, string}]},
+		{atom, [{regex, alphanum}]}
+	], []
+}.
+
+

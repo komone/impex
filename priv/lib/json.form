@@ -1,0 +1,33 @@
+% JSON Definition
+{form,
+	json,   % type
+	object, % root
+	[ % patterns
+		{object, [{"{", "}"}, {"{", members, "}"}]},
+		{members, [pair, {pair, ",", members}]}, % recursive def
+		{pair, [{key, ":", value}]},
+		{key, [{regex,string}]},
+		{array, [{"[", "]"}, {"[", elements, "]"}]},
+		{elements, [{list, ",", value}]}, % recursive def as fun
+		{value, [string, number, object, array, {"true"}, {"false"}, {"null"}]},
+		{string, [{regex,string}]},
+		{number, [{regex, number}]},
+%		{number, [int, {int, frac}, {int, exp}, {int, frac, exp}]},
+		{int, [digit, {digit1_9, digits}, {"-", digit}, {"-", digit1_9, digits}]},
+		{frac, [{".", digits}]},
+		{exp, [{e, digits}]},
+		{digits, [{digit, digits}]},
+		{digit1_9, [{regex, "[1-9]"}]},
+		{digit, [{regex, "[0-9]"}]},
+		{e, [{regex, "[Ee][+-]?"}]}
+	], 
+	[ % mods/transforms
+		{whitespace, ignore, any},
+		{lettercase, ignore},
+		{pair, tuple, 2},
+		{key, atom, any}
+	], 
+	[ % export
+	
+	]
+}.

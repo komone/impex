@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<form id="json" root="object">
+	<def id="object">
+		<pattern>
+			<terminal>{</terminal>
+			<terminal>}</terminal>
+		</pattern>
+		<pattern>
+			<terminal value="{"/>
+			<type ref="members"/>
+			<terminal value="}"/>
+		</pattern>
+	</def>
+	<def id="members">
+		<pattern>
+			<type idref="pair"/><sep>,</sep><type ref="members"/>
+		</pattern>
+		<pattern>
+			<type ref="pair"/>
+		</pattern>
+	</def>
+	<def type="pair">
+		<pattern>
+			<type ref="string"/><literal value=":"/><type ref="value"/>
+		</pattern>
+	</def>
+	<def type="array">
+		<pattern>
+			<terminal>[</terminal>
+			<terminal>]</terminal>
+		</pattern>
+		<pattern>
+			<terminal value="["/>
+			<type ref="elements"/>
+			<terminal value="]"/>
+		</pattern>
+	</def>
+	<def type="elements">
+		<pattern>
+			<type idref="value"/><literal value=","/><type idref="elements"/>
+		</pattern>
+		<pattern>
+			<type ref="value"/>
+		</pattern>
+	</def>
+	<def id="value">
+		<pattern><keyword value="true"/></pattern>
+		<pattern><keyword value="false"/></pattern>
+		<pattern><keyword value="null"/></pattern>
+		<pattern><type ref="string"/></pattern>	
+		<pattern><type ref="string"/></pattern>	
+		<pattern><type ref="array"/></pattern>	
+		<pattern><type ref="object"/></pattern>	
+	</def>
+	<mod ref="pair"><![CDATA[ fun([X, Y]) -> {list_to_atom(X), Y} end ]]></mod>
+	<output/>
+</form>
