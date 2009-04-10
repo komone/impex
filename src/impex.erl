@@ -25,7 +25,9 @@ new(Format) ->
 	Tokenizer = create_tokenizer(Terminals, [], []),
 	log(full, "Optimizing patterns...~n~p~n", [Form#form.defs]), 
 	Defs = find_lists(Form#form.defs, Terminals),
+	log(all, "Removed recursion...~n~p~n", [Defs]), 
 	Defs1 = normalize(Defs),
+	log(all, "Normalized...~n~p~n", [Defs1]), 
 	Defs2 = optimize(Defs1),
 	log(full, "~p~n", [Defs2]), 
 	impex_parser:new(Form#form{defs = Defs2}, Tokenizer).
@@ -101,24 +103,28 @@ create_tokenizer([], Acc, Acc1) ->
 
 % 
 find_lists(Defs, Terminals) ->
-	[find_lists(Type, Terminals, Patterns, []) || {Type, Patterns} <- Defs].
+	[Def#def{patterns = find_lists(Def#def.type, Terminals, Def#def.patterns, [])} || Def <- Defs].
 	%?FinalDefs = [replace_lists(Type, Patterns) || {Type, Patterns} <- Defs].
 % 
 find_lists(Type, Terminals, [H = {Value, Separator, Type}|T], Acc) when is_atom(Value) ->
 	case lists:member(Separator, Terminals) of 
 	true ->	
-		{Type, [{list, Separator, Value}]}; % NOTE: this will ignore any other pattern
+		[{list, Separator, Value}]; % NOTE: this will ignore any other pattern
 	false -> 
 		find_lists(Type, Terminals, T, [H|Acc])
 	end;
 find_lists(Type, Terminals, [H|T], Acc) ->
 	find_lists(Type, Terminals, T, [H|Acc]);
-find_lists(Type, _, [], Acc) ->
-	{Type, lists:reverse(Acc)}.
+find_lists(_, _, [], Acc) ->
+	lists:reverse(Acc).
 
 %
 normalize(Defs) ->
-	[{Type, normalize_patterns(Patterns, [])} || {Type, Patterns} <- Defs].
+	[Def#def{
+		patterns = normalize_patterns(Def#def.patterns, []),
+		transforms = normalize_transforms(Def#def.transforms, [])
+	} || Def <- Defs].
+
 %
 normalize_patterns([H|T], Acc) ->
 	Pattern = 
@@ -134,13 +140,18 @@ normalize_patterns([H|T], Acc) ->
 	normalize_patterns(T, [Pattern|Acc]);
 normalize_patterns([], Acc) ->
 	lists:reverse(Acc).
+
+%%
+normalize_transforms(T, _) when is_atom(T) -> [T];
+normalize_transforms(T, _) when is_list(T) -> T.
+
 %
 optimize(Defs) ->
 	% for now, a simple sort
-	[{Type, lists:sort(Patterns)} || {Type, Patterns} <- Defs].
+	[Def#def{patterns=lists:sort(Def#def.patterns)} || Def <- Defs].
 	
 %%
-find_terminals([{Type, Cases}|Rest], Acc) when is_atom(Type) ->
+find_terminals([{def, Type, Cases, _}|Rest], Acc) when is_atom(Type) ->
 	Terminals = terminals(Cases, []),
 	find_terminals(Rest, lists:append(Terminals, Acc));
 find_terminals([], Acc) ->

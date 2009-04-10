@@ -1,7 +1,11 @@
 WARNING: UNSTABLE CODE
 
-IMPEX is a new project. The intent is to provide a way to import and export Erlang terms efficiently to and from many native formats by using "form" definitions that parameterize the impex parser, rather than having to write leex/yecc definitions to compile a new parser for each data format instance.
+IMPEX is a new project. The intent is to provide a way to import and export Erlang terms efficiently to and from many native formats. Impex uses "form" definitions that parameterize the impex parser, avoiding having to write leex/yecc definitions and to compile a new parser for each data format instance. 
 
-!The export functions are not yet implemented.
+I have no idea as yet what the performance impact of this approach will be, but I suspect that a properly optimized impex parser may compare quite well against a precompiled yecc parser...
+
+NOTE: The export functions are not yet implemented.
 
 For a preview of the intended usage, please refer to file(s) in the docs folder, but note that this is currently provisional documentation, and may change frequently.
+
+(impex was created to support functionality required for the GX framework, see: http://github.com/komone/gx).

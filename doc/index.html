@@ -223,11 +223,17 @@ Term = case Parser:import_file("work/myjsonfile") of
 <p>The general format of the form file is as follows:</p>
 <pre class="file">
 { form, 
-	&lt;type-identifier&gt;, 
-	&lt;root-type&gt;, 
-	[ {&lt;type&gt;, [&lt;pattern&gt;, ...]} ], % import definitions
-	[ {&lt;type&gt;, <b>fun</b>(X) -> <em>expr</em> <b>end</b>}, {...} ], % import transforms
-	[ &lt;export definition&gt;, ... ] % export transforms
+
+    &lt;datatype&gt;, % the datatype identifier 
+
+    &lt;root&gt;, % the root type
+
+    [{&lt;key&gt;,&lt;value&gt;}, ...], % global mods, eg: {whitespace, ignore}
+
+    [ 
+        % type definitions and transform flags
+        {def, &lt;type&gt;, [&lt;pattern&gt;, ...]} [&lt;transform&gt;, ...] }, ...
+    ]
 }
 </pre>
 

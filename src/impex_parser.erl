@@ -4,7 +4,7 @@
 %% LICENSE: Creative Commons Non-Commercial License V 3.0 
 %% http://creativecommons.org/licenses/by-nc/3.0/us/
 %%
--module(impex_parser, [Def, Tokenizer]).
+-module(impex_parser, [Form, Tokenizer]).
 -vsn("0.1").
 -author('steve@simulacity.com').
 
@@ -29,8 +29,8 @@ import(Source) ->
 	Result = 
 		try
 			impex:stats(clear),
-			{ok, Value, []} = parse(Def#form.root, Tokens),
-			{Def#form.type, Value}
+			{ok, Value, []} = parse(Form#form.root, Tokens),
+			{Form#form.datatype, Value}
 		catch
 			error:Reason -> 
 				{error, invalid_format, Reason}
@@ -55,7 +55,7 @@ export(_Term) ->
 tokenize(Source) ->
 	Tokens = re:split(Source, Tokenizer, [{return, list}]), 
 	Tokens1 = clean(Tokens, []),
-	apply_mods(Tokens1, Def#form.mods).
+	apply_mods(Tokens1, Form#form.mods).
 
 %clean([[]|Rest], Acc) ->
 %	clean(Rest, Acc);
@@ -83,7 +83,7 @@ trim1(T) -> T.
 apply_mods(Tokens, [Rule|Rest]) ->
 	NewTokens = 
 		case Rule of
-		{whitespace, strip} -> 
+		{whitespace, ignore} -> 
 			[X || X <- Tokens, X =/= []];
 		_ -> Tokens
 		end,
@@ -97,12 +97,12 @@ apply_mods(Tokens, []) ->
 
 %%
 parse(Type, Tokens) ->
-	{Type, Patterns} = lists:keyfind(Type, 1, Def#form.defs),	
+	Def = #def{type=Type} = lists:keyfind(Type, 2, Form#form.defs),	
 	impex:log(all, "[~p] parse ~p~n", [Type, lists:sublist(Tokens, 3) ++ ['...']]),
 %	impex:log(full, "[~p] patterns ~p~n", [Type, Patterns]),
-	case apply_patterns(Type, Patterns, Tokens) of
+	case apply_patterns(Type, Def#def.patterns, Tokens) of
 	{ok, Value, Rest} -> 
-		Result = apply_transform(Type, Value),
+		Result = apply_transforms(Def, Value),
 		impex:log(full, "[~p] -> ~p ~p~n", [Type, Result, lists:sublist(Rest, 3) ++ ['...']]),
 		{ok, Result, Rest};
 	nomatch -> 
@@ -206,24 +206,32 @@ convert_to_type(string, Token) ->
 convert_to_type(_, Token) -> Token.
 
 %% 
-apply_transform(Type, Value) ->
-	case lists:keyfind(Type, 1, Def#form.mods) of 
-	{Type, Function} when is_function(Function, 1) ->
-		impex:log(full, "[~p] transform ~p ->", [Type, Value]),
-		Result = 
-			try 
-				Function(Value)
-			catch
-				error:Reason -> exit({invalid_fun, Reason, Type, Value})
-			end,
-		impex:log(full, " ~p~n", [Result]),
-		Result;
-	{Type, atom, _} when is_list(Value) -> list_to_atom(Value);
-	{Type, tuple, Size} when is_list(Value), length(Value) =:= Size -> list_to_tuple(Value);
-	{Type, list, Size} when is_tuple(Value), size(Value) =:= Size -> tuple_to_list(Value);	
-	{Type, list, _} when is_atom(Value) -> atom_to_list(Value);	
-	_ -> Value
-	end.
+apply_transforms(Def, Value) ->
+	impex:log(full, "[~p] transform ~p ->", [Def#def.type, Value]),
+	Result = apply_transform(Def#def.type, Def#def.transforms, Value),
+	impex:log(full, " ~p~n", [Result]),
+	Result.
+%	
+apply_transform(Type, [Fun|T], Value) when is_function(Fun, 1) ->
+	Result = 
+		try 
+			Fun(Value)
+		catch
+			error:Reason -> exit({invalid_fun, Reason, Type, Value})
+		end,
+	apply_transform(Type, T, Result);
+apply_transform(Type, [atom|T], Value) when is_list(Value) ->
+	apply_transform(Type, T, list_to_atom(Value));
+apply_transform(Type, [tuple|T], Value) when is_list(Value) ->
+	apply_transform(Type, T, list_to_tuple(Value));
+apply_transform(Type, [list|T], Value) when is_tuple(Value) ->
+	apply_transform(Type, T, tuple_to_list(Value));
+apply_transform(Type, [list|T], Value) when is_atom(Value) ->
+	apply_transform(Type, T, atom_to_list(Value));
+apply_transform(Type, [_|T], Value) ->
+	apply_transform(Type, T, Value);
+apply_transform(_, [], Value) ->
+	Value.
 
 %%
 %% Regular Expressions

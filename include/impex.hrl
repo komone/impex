@@ -5,5 +5,6 @@
 %% http://creativecommons.org/licenses/by-nc/3.0/us/
 %%
 
--record(form, {type, root, defs=[], mods=[], output=[]}).
+-record(form, {datatype, root, mods=[], defs=[]}).
 
+-record(def, {type, patterns=[], transforms=[]}).
